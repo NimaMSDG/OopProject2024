@@ -1,11 +1,11 @@
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Scanner;
-
+import java.util.Random;//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
+// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-    public static Scanner scanner = new Scanner(System.in);
     public static void main(String[] args) {
-        LogInMenu logInMenu = new LogInMenu();
-        logInMenu.run();
+        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
+        // to see how IntelliJ IDEA suggests fixing it.
+        Random rand = new Random();
+        int r= rand.nextInt(100);
+
     }
 }

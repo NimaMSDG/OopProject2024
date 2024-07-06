@@ -1,11 +1,11 @@
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MyController {
+
+    AI ai = new AI();
     DataBase dataBase = new DataBase();
     MyController(){
         ArrayList<Card> cards = new ArrayList<>();
@@ -19,7 +19,7 @@ public class MyController {
         Card c7 = new Card("c7", 32, 4, 40, 1);
         Card c8 = new Card("c8", 33, 5, 35, 1);
         Card c9 = new Card("c9", 31, 1, 36, 1);
-        Card c10 = new Card("c10", 30, 3, 30, 1);
+        Card c10 = new Card("c10", 30, 3, 30, 10);
         cards.add(c1);cards.add(c2);cards.add(c3);cards.add(c4);cards.add(c5);
         cards.add(c6);cards.add(c7);cards.add(c8);cards.add(c9);cards.add(c10);
         Card c11 = new Card("c11", 30, 3, 36, 1);
@@ -31,7 +31,7 @@ public class MyController {
         Card c71 = new Card("c71", 32, 4, 40, 1);
         Card c81 = new Card("c81", 33, 5, 35, 1);
         Card c91 = new Card("c91", 31, 1, 36, 1);
-        Card c101 = new Card("c101", 30, 3, 30, 1);
+        Card c101 = new Card("c101", 30, 3, 30, 10);
         cards1.add(c11);cards1.add(c21);cards1.add(c31);cards1.add(c41);cards1.add(c51);
         cards1.add(c61);cards1.add(c71);cards1.add(c81);cards1.add(c91);cards1.add(c101);
         player1.cards=cards;
@@ -54,9 +54,13 @@ public class MyController {
     Random rand = new Random();
 
     int NUMBER_OF_ROUND = 4;
+    Date date;
     boolean gameOver() {return player1.health*player2.health<=0;}
 
     public void run() throws InterruptedException {
+        date = new Date();
+
+
         Scanner scanner = new Scanner(System.in);
         String r1 = "-Select card number ([0-9]+) player ([0-9]+)";
         String r2 = "-Placing card number ([0-9]+) in block ([0-9]+)";
@@ -77,8 +81,9 @@ public class MyController {
                         showCardInfo(getmatcher(r1,input));
                     } else if (input.matches(r2)) {
                         if (playCard1(getmatcher(r2,input))){
-                            //Card card = getCardByMatcher(getmatcher(r2,input),1);
+                            Card card = getCardByMatcher(getmatcher(r2,input),1);
                             refreshcard1();
+                            upgradeMiddleCard(playercards1,card);
                             break;
                         }
                     }else System.out.println("Invalid command");
@@ -92,8 +97,9 @@ public class MyController {
                         showCardInfo(getmatcher(r1,input));
                     } else if (input.matches(r2)) {
                         if (playCard2(getmatcher(r2,input))) {
-                            //Card card = getCardByMatcher(getmatcher(r2,input),2);
+                            Card card = getCardByMatcher(getmatcher(r2,input),2);
                             refreshcard2();
+                            upgradeMiddleCard(playercards2,card);
                             break;
                         }
                     }else System.out.println("Invalid command");
@@ -105,10 +111,13 @@ public class MyController {
             TimeUnit.SECONDS.sleep(5);//delay
 
             startTimeline();
-            if (gameOver());
+            if (gameOver()){
+                if (player1.health<=0){
+
+                }
+            }
             if (NUMBER_OF_ROUND!=4) NUMBER_OF_ROUND=4;
             System.out.println("--------------------------------------------------------------------------------\n.\n.\n.\nTIMELINE ENDED\n.\n.\n.\n--------------------------------------------------------------------------------");
-
         }
     }
 
@@ -183,11 +192,16 @@ public class MyController {
                 return false;
             }
         } else {
-            specialeffects(card,2);
+
+            playingcard1(card,-1);
+            specialeffects(card,1);
             //playercards1.remove(x);
             System.out.println("Card "+card.name+" played");
-            return true;
+            updateMap();
+            printTable(0);
+            return false;
         }
+
     }
 
     public boolean playCard2(Matcher matcher){
@@ -232,11 +246,14 @@ public class MyController {
                 return false;
             }
         } else {
-            specialeffects(card,1);
+            playingcard2(card,-1);
+            specialeffects(card,2);
             //playercards1.remove(x);
 
             System.out.println("Card "+card.name+" played");
-            return true;
+            updateMap();
+            printTable(0);
+            return false;
         }
     }
 
@@ -293,6 +310,8 @@ public class MyController {
     void printTable(int TimelineIndex){
         boolean inTimeLine = TimelineIndex!=0;
 
+        System.out.println(ai.AiDeciotion(plate,plateuse,playercards1,playercards2,player1.health));
+
         //
         printCards(playercards1);
         //
@@ -328,25 +347,24 @@ public class MyController {
         }
         System.out.print("    "+player1.health);
         System.out.println();
-        for(int i=0;i<21;i++){
-            if(plateuse[0][i]>0){
-                if (plate[0][i].segmentDamage()>9) System.out.print("| "+plate[0][i].segmentDamage()+" |");
-                else System.out.print("| "+plate[0][i].segmentDamage()+"  |");
-            }
-            else if(plateuse[0][i]==0){
+        for(int i=0;i<21;i++) {
+            if (plateuse[0][i] > 0) {
+                if (plate[0][i].segmentDamage() > 9) System.out.print("| " + plate[0][i].segmentDamage() + " |");
+                else System.out.print("| " + plate[0][i].segmentDamage() + "  |");
+            } else if (plateuse[0][i] == 0) {
                 System.out.print("|    |");
-            }
-            else if(plateuse[0][i]==-1){
+            } else if (plateuse[0][i] == -1) {
                 System.out.print("| ## |");
             }
 
         }
 
-        System.out.println();
+        System.out.println("    "+sumOfDamage(plate[0]));
 
         ////
 
-        System.out.println("----------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------"+
+                "----------------------------------------------------------------");
 
         for(int i=0;i<21;i++){
             if(plateuse[1][i]==1){
@@ -381,7 +399,7 @@ public class MyController {
             }
 
         }
-        System.out.println();
+        System.out.println("    "+sumOfDamage(plate[1]));
         if (inTimeLine){
             for (int i = 0; i < 6*TimelineIndex-1; i++) {
                 System.out.print(" ");
@@ -431,14 +449,18 @@ public class MyController {
         plateBackUp(plateuse,MAIN_PLATE);
     }
     public void refreshcard1(){
+        if (playercards1.size()==5) return;
         int r1= rand.nextInt(player1.cards.size());
         playercards1.add(player1.cards.get(r1));
         player1.cards.remove(r1);
+        refreshcard1();
     }
     public void refreshcard2(){
+        if (playercards2.size()==5) return;
         int r2= rand.nextInt(player2.cards.size());
         playercards2.add(player2.cards.get(r2));
         player2.cards.remove(r2);
+        refreshcard2();
     }
 
     public void playingcard1(Card c,int n){
@@ -448,25 +470,28 @@ public class MyController {
 
                     plate[0][i+n-1]=c.clone();
                     plateuse[0][i+n-1]=1;
-                    playercards1.remove(c);
-                    if(!isspecial(c)){
-                        cardsingame1.add(c);
-                    }
-                }}
+
+                }
+            }
+        }
+        playercards1.remove(c);
+
+        if(!isspecial(c)){
+            cardsingame1.add(c);
         }
     }
     public void playingcard2(Card c,int n){
-        cardsingame2.add(c);
         if(n>=0){
             if(!isspecial(c) || c.number==20 || c.number==22){
                 for(int i=0;i<c.duration;i++){
                     plate[1][i+n-1]=c.clone();
                     plateuse[1][i+n-1]=1;
-                    playercards2.remove(c);
                 }}
         }
+        playercards2.remove(c);
+
         if(!isspecial(c)){
-            cardsingame1.add(c);
+            cardsingame2.add(c);
         }
     }
 
@@ -493,23 +518,23 @@ public class MyController {
         else if(c.number==18){
             ArrayList<Integer> freeblocks1=new ArrayList<Integer>();
             for(int i=0;i<21;i++){
-                if(plateuse[1][i]==0){
+                if(plateuse[0][i]==0){
                     freeblocks1.add(i);
                 }
             }
-            int r1= rand.nextInt(freeblocks1.size());
-            plateuse[1][nonblock1]=0;
-            plateuse[1][r1]=-1;
+            int r1= freeblocks1.get(rand.nextInt(freeblocks1.size()));
+            plateuse[0][nonblock1]=0;
+            plateuse[0][r1]=-1;
             nonblock1=r1;
             ArrayList<Integer> freeblocks2=new ArrayList<Integer>();
             for(int i=0;i<21;i++){
-                if(plateuse[2][i]==0){
+                if(plateuse[1][i]==0){
                     freeblocks2.add(i);
                 }
             }
-            int r2= rand.nextInt(freeblocks2.size());
-            plateuse[2][nonblock2]=0;
-            plateuse[2][r2]=-1;
+            int r2= freeblocks2.get(rand.nextInt(freeblocks2.size()));
+            plateuse[1][nonblock2]=0;
+            plateuse[1][r2]=-1;
             nonblock2=r2;
         }
         //tamir
@@ -523,14 +548,16 @@ public class MyController {
                 nonblock2=-1;
             }
         }
-        //hazf card
+        //hazf card//
         else if(c.number==10){
             if(n==1){
+                refreshcard1();
                 int r1= rand.nextInt(playercards2.size());
                 playercards1.add(playercards2.get(r1));
                 playercards2.remove(r1);
             }
             else if(n==2){
+                refreshcard2();
                 int r1= rand.nextInt(playercards1.size());
                 playercards2.add(playercards1.get(r1));
                 playercards1.remove(r1);
@@ -540,12 +567,18 @@ public class MyController {
         else if(c.number==16){
             if(n==1){
                 int r=rand.nextInt(cardsingame1.size());
-                cardsingame1.get(r).level+=3;
+                String name = cardsingame1.get(r).name;
+                for (Card card : cardsingame1){
+                    if (card.name.equals(name)) card.level+=3;
+                }
                 System.out.println("Card "+cardsingame1.get(r).name+" for player 1 buffed");
             }
             else if(n==2){
                 int r=rand.nextInt(cardsingame2.size());
-                cardsingame2.get(r).level+=3;
+                String name = cardsingame2.get(r).name;
+                for (Card card : cardsingame2){
+                    if (card.name.equals(name)) card.level+=3;
+                }
                 System.out.println("Card "+cardsingame2.get(r).name+" for player 2 buffed");
             }
         }
@@ -622,4 +655,26 @@ public class MyController {
             copy[i] = original[i].clone();
         }
     }
+
+    public int sumOfDamage(Card[] cards){
+        int sum=0;
+        for (Card card : cards){
+            if (card!=null) sum+=card.segmentDamage();
+        }
+        return sum;
+    }
+
+    public void upgradeMiddleCard(ArrayList<Card> cards,Card card){
+        int possibility=0;
+        Card.Character character = card.character;
+        if (character== Card.Character.DarthVader) possibility = 40;
+        if (character== Card.Character.Luke) possibility = 30;
+        if (character== Card.Character.BobaFett) possibility = 20;
+        if (character== Card.Character.Mandalorian) possibility = 20;
+
+        if (rand.nextInt(100)<possibility){
+            if (cards.size()==5) cards.get(2).level+=2;
+        }
+    }
+
 }

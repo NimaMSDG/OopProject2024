@@ -1,12 +1,13 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 public class AI {
-
     Random rand = new Random();
-    public int AiDeciotion(Card[][] plate, int[][] plateuse, ArrayList<Card> player, ArrayList<Card> opponent, int heal){
+    public int AiDeciotion(Card[][] plate, int[][] plateuse, ArrayList<Card> player,int noneblock,int heal){
         boolean hasdefense=false;
         boolean hasheal=false;
+        int playnumber=0;
         int defenseplace=-1;
         int healplace=-1;
         ArrayList<FreeSpace> options=new ArrayList<>();
@@ -17,7 +18,7 @@ public class AI {
                 f.card=plate[0][i];
                 int k=i-1;
                 boolean noright=false;
-                while((plateuse[1][k]==0 && plateuse[0][k]==0) && k>=0){
+                while(plateuse[1][k]==0 && k>=0){
                     k--;
                     f.leftfree+=1;
                     f.space+=1;
@@ -34,9 +35,9 @@ public class AI {
                         continue;
                     }
                 }
-                k=i+plate[0][i].duration;
+                k=i+plate[1][i].duration;
                 if(!noright){
-                    while((plateuse[1][k]==0 && plateuse[0][k]==0) && k<=20){
+                    while(plateuse[1][k]==0  && k<=20){
                         k++;
                         f.rightfree+=1;
                         f.space+=1;
@@ -48,18 +49,21 @@ public class AI {
 
 
         }
-        ArrayList<playcard> finaloptions=new ArrayList<>();
+ArrayList<playcard> finaloptions=new ArrayList<>();
         ArrayList<Card> specialcards=new ArrayList<>();
+        ArrayList<playcard> randomplay=new ArrayList<>();
+        for(int k=0;k<21;k++){
+            if(plateuse[1][k]==0){
+                healplace=k;
+                continue;
+            }
+        }
+        if(options.size()>0){
         for(int i=0;i<options.size();i++){
             boolean canwin=false;
             ArrayList<playcard> canplay=new ArrayList<>();
             FreeSpace f=options.get(i);
-            for(int k=0;k<21;k++){
-                if(plateuse[1][k]==0){
-                    healplace=k;
-                    continue;
-                }
-            }
+
             if(f.card.level>=25 && (f.duration+f.rightfree)>=3){
                 defenseplace=f.place;
             }
@@ -72,84 +76,118 @@ public class AI {
                     hasheal=true;
                 }
                 if(n==7 || n==10 || n==11 || n==16 || n==18 || n==23 || n==28 || n==30 ){
-                    specialcards.add(player.get(j));
+specialcards.add(player.get(j));
                 }
 
                 else{
-                    if(player.get(j).duration<=f.space && player.get(i).level>=f.card.level) {
-                        canwin=true;
-                        Card c = player.get(i);
-                        playcard p = new playcard();
-                        p.card=c;
-                        if (f.leftfree == 0) {
-                            p.place=f.place;
-                            p.winnum=c.level-f.card.level;
-                        }
-                        else if((f.leftfree+f.duration)>=c.duration){
-                            p.place=f.place+f.duration-c.duration;
-                            p.winnum=c.level-f.card.level;
-                        }
-                        else if((f.leftfree+f.duration)<c.duration){
-                            p.place=f.place-f.leftfree;
-                        }
-                        canplay.add(p);
+                if(player.get(j).duration<=f.space) {
+                    if(player.get(i).level>f.card.level){
+                    canwin=true;
+                    Card c = player.get(i);
+                    playcard p = new playcard();
+                    p.card=c;
+                    if (f.leftfree == 0) {
+p.place=f.place;
+p.winnum=c.level-f.card.level;
                     }
+                    else if((f.leftfree+f.duration)>=c.duration){
+                        p.place=f.place+f.duration-c.duration;
+                        p.winnum=c.level-f.card.level;
+                    }
+                    else if((f.leftfree+f.duration)<c.duration){
+                        p.place=f.place-f.leftfree;
+                        p.winnum=c.level-f.card.level;
+                    }
+                    canplay.add(p);}
+
+                }
+                if(f.leftfree>=player.get(i).duration){
+                    playcard p=new playcard();
+                    p.card=player.get(i);
+                    p.place=f.place-f.leftfree;
+                    randomplay.add(p);
+                }
                 }
             }
             if(canwin){
                 int min=canplay.get(0).winnum;
                 int minindex=0;
                 for(int z=0;z<canplay.size();z++){
-                    if(canplay.get(z).winnum<min){
-                        min=canplay.get(z).winnum;
-                        minindex=z;
-                    }
+                   if(canplay.get(z).winnum<min){
+                       min=canplay.get(z).winnum;
+                       minindex=z;
+                   }
                 }
                 finaloptions.add(canplay.get(minindex));
             }
 
-        }
-        if(finaloptions.size()==0){
+        }}
 
-            /*if(hasdefense){
-                playcard p=new playcard();
-                p.card=new Perfectdefense();
-                p.place=defenseplace;
-                finaloptions.add(p);
+        else{
+
+            for(int i=0;i<player.size();i++){
+                int n=player.get(i).number;
+                if(n==7 || n==10 || n==11 || n==16 || n==18 || n==20 || n==22 || n==23 || n==28 || n==30 ){
+                }
+                else{
+                    for(int j=0;j<21;j++){
+                        if(j<=noneblock && j+player.get(j).duration>=noneblock){
+                        }
+                        else{
+                            return 100*player.get(i).number+j;
+                        }
+                    }
+                }
             }
-            else if(hasheal && heal<100){
+
+        }
+        int r1=rand.nextInt(100);
+        int finalindex=-1;
+        if(finaloptions.size()==0){
+            if(hasdefense && defenseplace>=0){
+               playcard p=new playcard();
+               p.card=new Perfectdefense();
+               p.place=defenseplace;
+               finaloptions.add(p);
+           }
+           else if(hasheal && heal<100 ){
                 playcard p=new playcard();
                 p.card=new Feeltheforce();
-                p.place=healplace;
-                finaloptions.add(p);
+               p.place=healplace;
+               finaloptions.add(p);
 
-            }*/
-            if (true){
-                int r=rand.nextInt(specialcards.size());
+           }
+
+           else{
+               if(specialcards.size()==0){
+    if(randomplay.size()>0){
+    playcard p=randomplay.get(0);
+    finaloptions.add(p);
+    }
+                }
+               else{
+               int r=rand.nextInt(specialcards.size());
 
                 playcard p=new playcard();
                 p.card=specialcards.get(r);
                 p.place=30;
                 finaloptions.add(p);
-            }
+            }}
+return finaloptions.get(0).place+(100*finaloptions.get(0).card.number);
         }
-
         else{
 
             int min=finaloptions.get(0).winnum;
             int minindex=0;
             for(int m=1;m<finaloptions.size();m++){
                 if(finaloptions.get(m).winnum<min){
-                    finaloptions.remove(minindex);
                     minindex=m;
                     min=finaloptions.get(m).winnum;
                 }
-                else{
-                    finaloptions.remove(m);
-                }
+                finalindex=minindex;
             }
-
+            return finaloptions.get(minindex).place+(100*(finaloptions.get(minindex).card.number));
         }
-        return finaloptions.get(0).place+(100*(finaloptions.get(0).card.number));
+
     }
 }
